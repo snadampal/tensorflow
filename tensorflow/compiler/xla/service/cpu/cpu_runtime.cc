@@ -85,6 +85,8 @@ extern const char* const kMKLSingleThreadedMatMulF32SymbolName =
     "__xla_cpu_runtime_MKLSingleThreadedMatMulF32";
 extern const char* const kMKLSingleThreadedMatMulF64SymbolName =
     "__xla_cpu_runtime_MKLSingleThreadedMatMulF64";
+extern const char* const kACLMatMulF32SymbolName =
+    "__xla_cpu_runtime_ACLMatMulF32";
 extern const char* const kEigenConv2DF16SymbolName =
     "__xla_cpu_runtime_EigenConv2DF16";
 extern const char* const kEigenConv2DF32SymbolName =

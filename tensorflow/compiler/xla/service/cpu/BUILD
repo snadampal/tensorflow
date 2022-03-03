@@ -344,6 +344,7 @@ cc_library(
         ":runtime_topk",
         ":runtime_matmul",
         ":runtime_matmul_mkl",
+	":runtime_matmul_acl",
         ":runtime_single_threaded_conv2d",
         ":runtime_single_threaded_conv3d",
         ":runtime_single_threaded_fft",
@@ -830,6 +831,22 @@ cc_library(
         "//third_party/eigen3",
     ] + mkl_deps(),
 )
+
+cc_library(
+    name = "runtime_matmul_acl",
+    srcs = ["runtime_matmul_acl.cc"],
+    hdrs = ["runtime_matmul_acl.h"],
+    copts = runtime_copts(),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tensorflow/compiler/xla:executable_run_options",
+        "//tensorflow/core/platform:types",
+        "//third_party/eigen3",
+	"//tensorflow/core/platform:dynamic_annotations",
+        "@compute_library//:arm_compute",
+    ],
+)
+
 
 cc_library(
     name = "runtime_single_threaded_conv2d",

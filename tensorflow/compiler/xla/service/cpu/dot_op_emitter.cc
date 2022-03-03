@@ -774,7 +774,8 @@ Status DotOpEmitter::EmitCallToRuntime() {
     case F32:
       fn_name = multi_threaded
                     ? (use_mkl_dnn ? runtime::kMKLMatMulF32SymbolName
-                                   : runtime::kEigenMatMulF32SymbolName)
+                                  // : runtime::kEigenMatMulF32SymbolName)
+				  : runtime::kACLMatMulF32SymbolName)
                     : (use_mkl_dnn
                            ? runtime::kMKLSingleThreadedMatMulF32SymbolName
                            : runtime::kEigenSingleThreadedMatMulF32SymbolName);
@@ -1034,6 +1035,12 @@ bool CanEmitTiledLlvmIrGemm(
 DotImplementationStrategy GetDotImplementationStrategy(
     const HloModuleConfig& config, const DotInfo& dot_info,
     const TargetMachineFeatures& target_machine_features) {
+
+	// TODO: this is to make acl gemm kernel the default
+	// for the dot op. implement it conditionally
+	// or define acl runtime as the default strategy.
+	return DotImplementationStrategy::kEigen;
+
   PrimitiveType element_type = dot_info.result_shape.element_type();
   // Any Matrix-Vector product of floating point or integral type, or
   // a transpose-dot fusion of the same can be lowered to a tiled LLVM
