@@ -32,10 +32,10 @@ namespace {
 // Since XLA MatMul does not use alpha, beta, we set them to 1.0 and 0.0.
 // Matrix lhs, rhs and out are all column-major.
 void MatMulF32(const void* run_options_ptr, float* out, float* lhs, float* rhs,
-               int64_t m, int64_t n, int64_t k, int32_t transpose_lhs,
+               int64_t m, int64_t n, int64_t k, int64_t batch_size, int32_t transpose_lhs,
                int32_t transpose_rhs) {
 	const float alpha = 1.0f, beta = 0.0f;
-	const int32_t batch = 1;
+	const int32_t batch = batch_size;
 
 	/* TODO: optimize this object creation along with tensor init and
 	 * gemm configuration by caching the shapes, similar to onednn
@@ -174,8 +174,8 @@ void MatMulF32(const void* run_options_ptr, float* out, float* lhs, float* rhs,
 
 TF_ATTRIBUTE_NO_SANITIZE_MEMORY void __xla_cpu_runtime_ACLMatMulF32(
     const void* run_options_ptr, float* out, float* lhs, float* rhs, int64_t m,
-    int64_t n, int64_t k, int32_t transpose_lhs, int32_t transpose_rhs) {
-	MatMulF32(run_options_ptr, out, lhs, rhs, m, n, k, transpose_lhs, transpose_rhs);
+    int64_t n, int64_t k, int64_t batch_size, int32_t transpose_lhs, int32_t transpose_rhs) {
+	MatMulF32(run_options_ptr, out, lhs, rhs, m, n, k, batch_size, transpose_lhs, transpose_rhs);
 }
 
 #endif  // ENABLE_ACL

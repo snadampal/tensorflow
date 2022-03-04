@@ -54,7 +54,7 @@ struct acl_matmul_conf_t {
 
 extern void __xla_cpu_runtime_ACLMatMulF32(
     const void* /* xla::ExecutableRunOptions* */ run_options_ptr, float* out,
-    float* lhs, float* rhs, int64_t m, int64_t n, int64_t k,
+    float* lhs, float* rhs, int64_t m, int64_t n, int64_t k, int64_t batch_size,
     int32_t transpose_lhs, int32_t transpose_rhs);
 
 #else
