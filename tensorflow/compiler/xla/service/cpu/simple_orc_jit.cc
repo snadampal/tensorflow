@@ -54,6 +54,7 @@ limitations under the License.
 #include "tensorflow/compiler/xla/types.h"
 #include "tensorflow/core/platform/logging.h"
 #include "tensorflow/compiler/xla/service/cpu/runtime_matmul_acl.h"
+#include "tensorflow/compiler/xla/service/cpu/runtime_conv2d_acl.h"
 
 namespace xla {
 namespace cpu {
@@ -306,6 +307,7 @@ bool RegisterKnownJITSymbols() {
   REGISTER_CPU_RUNTIME_SYMBOL(TracingStart);
   REGISTER_CPU_RUNTIME_SYMBOL(TracingEnd);
   REGISTER_CPU_RUNTIME_SYMBOL(ACLMatMulF32);
+  REGISTER_CPU_RUNTIME_SYMBOL(ACLConv2DF32);
 
   registry->Register("__gnu_f2h_ieee", reinterpret_cast<void*>(__gnu_f2h_ieee),
                      "Host");

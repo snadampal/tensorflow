@@ -337,6 +337,7 @@ cc_library(
         ":runtime_pow",
         ":runtime_conv2d",
         ":runtime_conv2d_mkl",
+        ":runtime_conv2d_acl",
         ":runtime_conv3d",
         ":runtime_fft",
         ":runtime_fork_join",
@@ -843,6 +844,26 @@ cc_library(
         "//tensorflow/core/platform:types",
         "//third_party/eigen3",
 	"//tensorflow/core/platform:dynamic_annotations",
+        "@compute_library//:arm_compute",
+    ],
+)
+
+cc_library(
+    name = "runtime_conv2d_acl",
+    srcs = [
+        "runtime_conv2d_acl.cc",
+    ],
+    hdrs = ["runtime_conv2d_acl.h"],
+    copts = runtime_copts() + tf_openmp_copts(),
+    visibility = ["//visibility:public"],
+    deps = [
+        ":runtime_conv2d",
+        ":runtime_single_threaded_conv2d",
+        "//tensorflow/compiler/xla:executable_run_options",
+        "//tensorflow/core/platform:dynamic_annotations",
+        "//tensorflow/core/platform:types",
+        "//tensorflow/core/kernels:eigen_helpers",
+        "//third_party/eigen3",
         "@compute_library//:arm_compute",
     ],
 )
