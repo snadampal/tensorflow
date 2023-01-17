@@ -484,8 +484,60 @@ class MklDnnMatMulOpBase : public OpKernel {
   inline bool IsWeightCacheEmpty(OpKernelContext* context)
       TF_LOCKS_EXCLUDED(mu_) {
     tf_shared_lock lock(mu_);
+
+    std::cout << "this instance" << this << "weight_oi_.NumElements()" << weight_oi_.NumElements() << std::endl;
+
     return (weight_oi_.NumElements() == 0);
   }
+
+  // Cache the converted weight in a tensor.
+  // Only one thread can execute this method at any given time.
+  void CacheWeight(
+      OpKernelContext* context,
+      const std::shared_ptr<dnnl::matmul::primitive_desc>&
+          matmul_fwd_pd,
+      Tweight* weight_data, const Tensor& weight_tensor,
+      MklDnnData<Tweight>& weight, const memory::desc& weight_md)
+      TF_LOCKS_EXCLUDED(mu_) {
+              std::cout << "matmul op common: CacheWeight" << std::endl;
+              mutex_lock lock(mu_);
+    const Tensor& weight_t = weight_oi_;
+
+    // If the weights are already cached, there's nothing to do
+    if (weight_t.NumElements() > 0) {
+      return;
+    }
+
+    // reorder and cache the weight
+    weight.SetUsrMem(weight_md, &weight_tensor);
+    weight.CheckReorderToOpMem(matmul_fwd_pd.get()->weights_desc(), cpu_engine_,
+                               context);
+    weight_data = static_cast<Tweight*>(weight.GetOpMem().get_data_handle());
+
+    size_t weight_size = matmul_fwd_pd.get()->weights_desc().get_size();
+    TensorShape weight_tf_shape;
+    weight_tf_shape.AddDim(weight_size / sizeof(Tweight));
+
+    OP_REQUIRES_OK(context,
+                   context->allocate_temp(DataTypeToEnum<Tweight>::value,
+                                          weight_tf_shape, &weight_oi_));
+
+    void* weight_oi_t_data = weight.GetTensorBuffer(&weight_oi_);
+    memcpy(weight_oi_t_data, weight_data, weight_size);
+
+    // cache the memory descriptor
+    auto expected_md = matmul_fwd_pd->weights_desc();
+    TensorShape weight_mkl_format;
+    weight_mkl_format.AddDim(sizeof(expected_md) / sizeof(Tweight));
+
+    OP_REQUIRES_OK(context,
+                   context->allocate_temp(DataTypeToEnum<Tweight>::value,
+                                          weight_mkl_format, &weight_oi_md_));
+    *reinterpret_cast<memory::desc*>(weight_oi_md_.flat<Tweight>().data()) =
+        expected_md;
+
+  }
+
 
   // Cache the converted weight in a tensor.
   // Only one thread can execute this method at any given time.
@@ -540,6 +592,7 @@ class MklDnnMatMulOpBase : public OpKernel {
     const Tensor& weight_t = weight_oi_;
     const Tensor& weight_md_t = weight_oi_md_;
 
+    std::cout << "GetCachedWeight" << std::endl;
     // Check if the memory descriptor of the cached weight is same as
     // expected_md. if so use the cached memory, else return NULL
     if (weight_md_t.flat<Tweight>().size()) {
