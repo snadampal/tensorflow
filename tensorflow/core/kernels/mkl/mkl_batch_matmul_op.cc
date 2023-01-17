@@ -25,6 +25,7 @@ limitations under the License.
 
 #if defined(INTEL_MKL)
 
+#include "mkl_matmul_ops_common.h"
 #include "third_party/eigen3/unsupported/Eigen/CXX11/Tensor"
 #include "tensorflow/core/framework/register_types.h"
 #include "tensorflow/core/framework/tensor.h"
@@ -46,11 +47,18 @@ typedef Eigen::ThreadPoolDevice CPUDevice;
 //  we set it to false.
 template <typename Device, typename Tlhs, typename Trhs, typename Toutput,
           bool v2_bcast>
-class BatchMatMulMkl : public OpKernel {
+class BatchMatMulMkl : public MklDnnMatMulOpBase<Trhs, Toutput> {
  public:
-  explicit BatchMatMulMkl(OpKernelConstruction* context) : OpKernel(context) {
+  explicit BatchMatMulMkl(OpKernelConstruction* context) : MklDnnMatMulOpBase<Trhs, Toutput>(context) {
     OP_REQUIRES_OK(context, context->GetAttr("adj_x", &adj_x_));
     OP_REQUIRES_OK(context, context->GetAttr("adj_y", &adj_y_));
+    this->is_weight_const_ = false;
+    if (AreWeightsFrozen()) {
+      this->is_weight_const_ = true;
+    } else if (context->HasAttr("is_filter_const")){
+      OP_REQUIRES_OK(
+          context, context->GetAttr("is_filter_const", &(this->is_weight_const_)));
+    }
   }
 
   virtual ~BatchMatMulMkl() {}
@@ -181,11 +189,28 @@ class BatchMatMulMkl : public OpKernel {
       // Reorder weights if necessary.
       // Check whether we need to do reorder.
       if (weight_md != matmul_pd->weights_desc()) {
-        weights_mkl.SetUsrMem(weight_md, weight_data);
-        weights_mkl.CheckReorderToOpMem(matmul_pd.get()->weights_desc(),
-                                        this->cpu_engine_, ctx);
-        weight_data =
-            reinterpret_cast<Trhs*>(weights_mkl.GetOpMem().get_data_handle());
+        Trhs* cached_weight_data = nullptr;
+        if (this->is_weight_const_) {
+          if (this->IsWeightCacheEmpty(ctx)) {
+            this->CacheWeight(ctx, matmul_pd, cached_weight_data, rhs,
+                              weights_mkl, weight_md);
+          }
+          cached_weight_data =
+              this->GetCachedWeight(ctx, matmul_pd->weights_desc());
+        }
+
+        // Cache weight may fail when it gets different format in different
+        // iteration. Fallback to reoder if it happens.
+        // Also do generel reorder if weight isn't const.
+        if (cached_weight_data != nullptr) {
+          weight_data = cached_weight_data;
+        } else {
+          weights_mkl.SetUsrMem(weight_md, weight_data);
+          weights_mkl.CheckReorderToOpMem(matmul_pd.get()->weights_desc(),
+                                         this->cpu_engine_, ctx);
+          weight_data =
+              reinterpret_cast<Trhs*>(weights_mkl.GetOpMem().get_data_handle());
+        }
       }
     }
 #endif  // DNNL_AARCH64_USE_ACL
