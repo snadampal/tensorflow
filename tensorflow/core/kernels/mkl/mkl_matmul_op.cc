@@ -23,7 +23,10 @@ limitations under the License.
 // and when it is undefined at build time, this file becomes an empty
 // compilation unit
 
-#if defined(INTEL_MKL)
+// We do not want to use this kernel for aarch64 because the
+// Arm Compute Library does not provide a BLAS SGEMM
+// interface, which is what MklMatMulOp calls by default.
+#if !defined(DNNL_AARCH64_USE_ACL)
 
 #include "dnnl.hpp"
 #include "tensorflow/core/framework/op.h"
@@ -204,4 +207,4 @@ class MklMatMulOp : public OpKernel {
 TF_CALL_float(REGISTER_CPU);
 TF_CALL_bfloat16(REGISTER_CPU);
 }  // namespace tensorflow
-#endif  // INTEL_MKL
+#endif  // !DNNL_AARCH64_USE_ACL
