@@ -445,6 +445,13 @@ StatusOr<OptimizedFunctionGraphInfo> OptimizeFunctionGraph(
   optimization_options.debug_filename_prefix = "pflr_optmz_";
   env->CreateUniqueFileName(&optimization_options.debug_filename_prefix, "_");
 
+  if (cpu_device->tensorflow_cpu_worker_threads() != nullptr) {
+    // Pass to the optimisation pass number of intra threads that are used to
+    // parallelise operations
+    session_options.config.set_intra_op_parallelism_threads(
+        cpu_device->tensorflow_cpu_worker_threads()->num_threads);
+  }
+
   DumpGraph("Before running PRE_PLACEMENT passes", graph.get());
   if (should_run_optimization_passes) {
     TF_RETURN_IF_ERROR(OptimizationPassRegistry::Global()->RunGrouping(
