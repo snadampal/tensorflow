@@ -27,7 +27,7 @@ limitations under the License.
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/util/mkl_util.h"
 #include "tensorflow/core/util/onednn_env_vars.h"
-#ifdef DNNL_AARCH64_USE_ACL
+#if defined(DNNL_AARCH64_USE_ACL) && defined(ENABLE_ONEDNN_OPENMP)
 #include "tensorflow/core/platform/mutex.h"
 #endif
 
@@ -122,7 +122,7 @@ class MklDnnMatMulFwdPrimitive : public MklPrimitive {
   void Execute(const Tinput* src_data, const Tweight* weight_data,
                const Tbias* bias_data, Toutput* dst_data, void* sp_data,
                std::shared_ptr<stream> fwd_stream) {
-#ifdef DNNL_AARCH64_USE_ACL
+#if defined(DNNL_AARCH64_USE_ACL) && defined(ENABLE_ONEDNN_OPENMP)
     mutex_lock lock(primitive_execution_mu_);
 #endif
 #ifndef ENABLE_ONEDNN_OPENMP
@@ -210,7 +210,11 @@ class MklDnnMatMulFwdPrimitive : public MklPrimitive {
 
     context_.weight_md.reset(new memory::desc({matmul_fwd_params.weight_dims},
                                               MklDnnType<Tweight>(),
+#ifdef DNNL_AARCH64_USE_ACL
+                                              memory::format_tag::any));
+#else
                                               matmul_fwd_params.weight_format));
+#endif
 
     context_.dst_md.reset(new memory::desc({matmul_fwd_params.dst_dims},
                                            MklDnnType<Toutput>(),
@@ -343,7 +347,7 @@ class MklDnnMatMulFwdPrimitive : public MklPrimitive {
 
   struct MklDnnMatMulFwdContext context_;
 
-#ifdef DNNL_AARCH64_USE_ACL
+#if defined(DNNL_AARCH64_USE_ACL) && defined(ENABLE_ONEDNN_OPENMP)
   // Guards Execution()
   mutex primitive_execution_mu_;
 #endif
@@ -619,7 +623,7 @@ class MklMatMulPrimitive : public MklPrimitive {
   void Execute(const std::shared_ptr<stream>& stream, const Tlhs* a_data,
                const Trhs* b_data, const Toutput* c_data, void* sp_data,
                void* mul_data = nullptr, void* add_data = nullptr) {
-#ifdef DNNL_AARCH64_USE_ACL
+#if defined(DNNL_AARCH64_USE_ACL) && defined(ENABLE_ONEDNN_OPENMP)
     mutex_lock lock(primitive_execution_mu_);
 #endif
 #ifndef ENABLE_ONEDNN_OPENMP
@@ -711,8 +715,11 @@ class MklMatMulPrimitive : public MklPrimitive {
                                          params.a_strides));
 
     context_.b_md.reset(new memory::desc({params.b_dims}, MklDnnType<Trhs>(),
+#ifdef DNNL_AARCH64_USE_ACL
+                                         memory::format_tag::any));
+#else
                                          params.b_strides));
-
+#endif
     context_.c_md.reset(new memory::desc({params.c_dims}, MklDnnType<Toutput>(),
                                          params.c_strides));
 
@@ -754,8 +761,13 @@ class MklMatMulPrimitive : public MklPrimitive {
     // Create memory primitive based on dummy data.
     context_.a_mem.reset(
         new dnnl::memory(*context_.a_md, cpu_engine_, DummyData));
+#ifndef DNNL_AARCH64_USE_ACL
     context_.b_mem.reset(
         new dnnl::memory(*context_.b_md, cpu_engine_, DummyData));
+#else
+    context_.b_mem.reset(new dnnl::memory(
+        context_.prim_desc.get()->weights_desc(), cpu_engine_, DummyData));
+#endif
     context_.c_mem.reset(
         new dnnl::memory(*context_.c_md, cpu_engine_, DummyData));
     auto scratchpad_md = context_.prim_desc->scratchpad_desc();
@@ -794,7 +806,7 @@ class MklMatMulPrimitive : public MklPrimitive {
   }
 
   struct MklMatMulContext context_;
-#ifdef DNNL_AARCH64_USE_ACL
+#if defined(DNNL_AARCH64_USE_ACL) && defined(ENABLE_ONEDNN_OPENMP)
   mutex primitive_execution_mu_;
 #endif
 };

@@ -81,11 +81,15 @@ struct MklDnnThreadPool : public threadpool_iface {
                            ->tensorflow_cpu_worker_threads()
                            ->workers->AsEigenThreadPool();
     if (num_threads == -1) {
+#ifndef DNNL_AARCH64_USE_ACL
       dnnl_threadpool_interop_set_max_concurrency(
           eigen_interface_->NumThreads());
+#endif
       num_threads_ = eigen_interface_->NumThreads();
     } else {
+#ifndef DNNL_AARCH64_USE_ACL
       dnnl_threadpool_interop_set_max_concurrency(num_threads);
+#endif
       num_threads_ = num_threads;
     }
   }

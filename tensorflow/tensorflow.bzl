@@ -1490,7 +1490,7 @@ def tf_cc_test(
                 "-lpthread",
                 "-lm",
             ],
-            clean_dep("//third_party/compute_library:build_with_acl"): [
+            clean_dep("@compute_library//:build_with_acl"): [
                 "-fopenmp",
                 "-lm",
             ],
@@ -1533,7 +1533,7 @@ def tf_cc_shared_test(
                 "-lpthread",
                 "-lm",
             ],
-            clean_dep("//third_party/compute_library:build_with_acl"): [
+            clean_dep("@compute_library//:build_with_acl"): [
                 "-fopenmp",
                 "-lm",
             ],
