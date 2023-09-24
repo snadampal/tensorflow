@@ -1,0 +1,620 @@
+From 4a61ac1b8dfb5fa86cc9114686f99ace5812ff19 Mon Sep 17 00:00:00 2001
+From: Sunita Nadampalli <nadampal@amazon.com>
+Date: Sun, 24 Sep 2023 21:58:31 +0000
+Subject: [PATCH] eigen perf
+
+---
+ Eigen/src/Core/arch/AltiVec/MatrixProduct.h   | 20 +++++++++++++++++++
+ .../Core/products/GeneralBlockPanelKernel.h   |  7 +++++--
+ .../products/GeneralMatrixMatrixTriangular.h  |  4 ++++
+ Eigen/src/Core/products/GeneralMatrixVector.h |  8 ++++++++
+ .../Core/products/GeneralMatrixVector_BLAS.h  |  4 ++++
+ .../Core/products/SelfadjointMatrixMatrix.h   |  9 +++++----
+ .../Core/products/TriangularMatrixMatrix.h    | 11 ++++++++--
+ Eigen/src/Core/util/BlasUtil.h                |  6 +++++-
+ blas/PackedTriangularMatrixVector.h           |  5 ++++-
+ blas/level2_impl.h                            |  8 +++++++-
+ blas/level3_impl.h                            |  4 +++-
+ .../Eigen/CXX11/src/Tensor/TensorBase.h       |  3 +++
+ .../CXX11/src/Tensor/TensorContraction.h      |  8 ++++++++
+ 13 files changed, 85 insertions(+), 12 deletions(-)
+
+diff --git a/Eigen/src/Core/arch/AltiVec/MatrixProduct.h b/Eigen/src/Core/arch/AltiVec/MatrixProduct.h
+index adb2eac..ef68bd6 100644
+--- a/Eigen/src/Core/arch/AltiVec/MatrixProduct.h
++++ b/Eigen/src/Core/arch/AltiVec/MatrixProduct.h
+@@ -16,6 +16,7 @@
+ #endif
+ 
+ #include "MatrixProductCommon.h"
++#include <iostream>
+ 
+ #if !defined(EIGEN_ALTIVEC_DISABLE_MMA)
+ #define EIGEN_ALTIVEC_DISABLE_MMA 0
+@@ -2970,6 +2971,7 @@ void gemm_pack_rhs<std::complex<double>, Index, DataMapper, nr, RowMajor, Conjug
+ template<typename Index, typename DataMapper, int mr, int nr, bool ConjugateLhs, bool ConjugateRhs>
+ struct gebp_kernel<float, float, Index, DataMapper, mr, nr, ConjugateLhs, ConjugateRhs>
+ {
++	std::cout << "gebp_kernel1 " << std::endl;
+   typedef typename quad_traits<float>::vectortype   Packet;
+   typedef typename quad_traits<float>::rhstype      RhsPacket;
+ 
+@@ -2984,6 +2986,7 @@ void gebp_kernel<float, float, Index, DataMapper, mr, nr, ConjugateLhs, Conjugat
+                Index rows, Index depth, Index cols, float alpha,
+                Index strideA, Index strideB, Index offsetA, Index offsetB)
+   {
++	  std::cout << "gebp_kernel2 " << std::endl;
+     const Index accRows = quad_traits<float>::rows;
+     const Index accCols = quad_traits<float>::size;
+     void (*gemm_function)(const DataMapper&, const float*, const float*, Index, Index, Index, float, Index, Index, Index, Index);
+@@ -3011,6 +3014,8 @@ struct gebp_kernel<std::complex<float>, std::complex<float>, Index, DataMapper,
+   typedef Packet2cf  Packetc;
+   typedef Packet4f   RhsPacket;
+ 
++  std::cout << "gebp_kernel3 " << std::endl;
++
+   void operator()(const DataMapper& res, const std::complex<float>* blockA, const std::complex<float>* blockB,
+                   Index rows, Index depth, Index cols, std::complex<float> alpha,
+                   Index strideA=-1, Index strideB=-1, Index offsetA=0, Index offsetB=0);
+@@ -3022,6 +3027,7 @@ void gebp_kernel<std::complex<float>, std::complex<float>, Index, DataMapper, mr
+                Index rows, Index depth, Index cols, std::complex<float> alpha,
+                Index strideA, Index strideB, Index offsetA, Index offsetB)
+   {
++	  std::cout << "gebp_kernel4 " << std::endl;
+     const Index accRows = quad_traits<float>::rows;
+     const Index accCols = quad_traits<float>::size;
+     void (*gemm_function)(const DataMapper&, const std::complex<float>*, const std::complex<float>*,
+@@ -3050,6 +3056,7 @@ struct gebp_kernel<float, std::complex<float>, Index, DataMapper, mr, nr, Conjug
+   typedef Packet2cf  Packetc;
+   typedef Packet4f   RhsPacket;
+ 
++  std::cout << "gebp_kernel5 " << std::endl;
+   void operator()(const DataMapper& res, const float* blockA, const std::complex<float>* blockB,
+                   Index rows, Index depth, Index cols, std::complex<float> alpha,
+                   Index strideA=-1, Index strideB=-1, Index offsetA=0, Index offsetB=0);
+@@ -3061,6 +3068,7 @@ void gebp_kernel<float, std::complex<float>, Index, DataMapper, mr, nr, Conjugat
+                Index rows, Index depth, Index cols, std::complex<float> alpha,
+                Index strideA, Index strideB, Index offsetA, Index offsetB)
+   {
++	  std::cout << "gebp_kernel6 " << std::endl;
+     const Index accRows = quad_traits<float>::rows;
+     const Index accCols = quad_traits<float>::size;
+     void (*gemm_function)(const DataMapper&, const float*, const std::complex<float>*,
+@@ -3087,6 +3095,7 @@ struct gebp_kernel<std::complex<float>, float, Index, DataMapper, mr, nr, Conjug
+   typedef Packet4f   Packet;
+   typedef Packet2cf  Packetc;
+   typedef Packet4f   RhsPacket;
++  std::cout << "gebp_kernel7 " << std::endl;
+ 
+   void operator()(const DataMapper& res, const std::complex<float>* blockA, const float* blockB,
+                   Index rows, Index depth, Index cols, std::complex<float> alpha,
+@@ -3099,6 +3108,7 @@ void gebp_kernel<std::complex<float>, float, Index, DataMapper, mr, nr, Conjugat
+                Index rows, Index depth, Index cols, std::complex<float> alpha,
+                Index strideA, Index strideB, Index offsetA, Index offsetB)
+   {
++	  std::cout << "gebp_kernel8 " << std::endl;
+     const Index accRows = quad_traits<float>::rows;
+     const Index accCols = quad_traits<float>::size;
+     void (*gemm_function)(const DataMapper&, const std::complex<float>*, const float*,
+@@ -3122,6 +3132,7 @@ void gebp_kernel<std::complex<float>, float, Index, DataMapper, mr, nr, Conjugat
+ template<typename Index, typename DataMapper, int mr, int nr, bool ConjugateLhs, bool ConjugateRhs>
+ struct gebp_kernel<double, double, Index, DataMapper, mr, nr, ConjugateLhs, ConjugateRhs>
+ {
++	std::cout << "gebp_kernel9 " << std::endl;
+   typedef typename quad_traits<double>::vectortype  Packet;
+   typedef typename quad_traits<double>::rhstype     RhsPacket;
+ 
+@@ -3136,6 +3147,7 @@ void gebp_kernel<double, double, Index, DataMapper, mr, nr, ConjugateLhs, Conjug
+                Index rows, Index depth, Index cols, double alpha,
+                Index strideA, Index strideB, Index offsetA, Index offsetB)
+   {
++	  std::cout << "gebp_kernel10 " << std::endl;
+     const Index accRows = quad_traits<double>::rows;
+     const Index accCols = quad_traits<double>::size;
+     void (*gemm_function)(const DataMapper&, const double*, const double*, Index, Index, Index, double, Index, Index, Index, Index);
+@@ -3159,6 +3171,7 @@ void gebp_kernel<double, double, Index, DataMapper, mr, nr, ConjugateLhs, Conjug
+ template<typename Index, typename DataMapper, int mr, int nr, bool ConjugateLhs, bool ConjugateRhs>
+ struct gebp_kernel<std::complex<double>, std::complex<double>, Index, DataMapper, mr, nr, ConjugateLhs, ConjugateRhs>
+ {
++	std::cout << "gebp_kernel11 " << std::endl;
+   typedef quad_traits<double>::vectortype   Packet;
+   typedef Packet1cd  Packetc;
+   typedef quad_traits<double>::rhstype   RhsPacket;
+@@ -3174,6 +3187,7 @@ void gebp_kernel<std::complex<double>, std::complex<double>, Index, DataMapper,
+                Index rows, Index depth, Index cols, std::complex<double> alpha,
+                Index strideA, Index strideB, Index offsetA, Index offsetB)
+   {
++	  std::cout << "gebp_kernel12 " << std::endl;
+     const Index accRows = quad_traits<double>::rows;
+     const Index accCols = quad_traits<double>::size;
+     void (*gemm_function)(const DataMapper&, const std::complex<double>*, const std::complex<double>*,
+@@ -3197,6 +3211,7 @@ void gebp_kernel<std::complex<double>, std::complex<double>, Index, DataMapper,
+ template<typename Index, typename DataMapper, int mr, int nr, bool ConjugateLhs, bool ConjugateRhs>
+ struct gebp_kernel<std::complex<double>, double, Index, DataMapper, mr, nr, ConjugateLhs, ConjugateRhs>
+ {
++	std::cout << "gebp_kernel13 " << std::endl;
+   typedef quad_traits<double>::vectortype   Packet;
+   typedef Packet1cd  Packetc;
+   typedef quad_traits<double>::rhstype   RhsPacket;
+@@ -3212,6 +3227,7 @@ void gebp_kernel<std::complex<double>, double, Index, DataMapper, mr, nr, Conjug
+                Index rows, Index depth, Index cols, std::complex<double> alpha,
+                Index strideA, Index strideB, Index offsetA, Index offsetB)
+   {
++	  std::cout << "gebp_kernel14 " << std::endl;
+     const Index accRows = quad_traits<double>::rows;
+     const Index accCols = quad_traits<double>::size;
+     void (*gemm_function)(const DataMapper&, const std::complex<double>*, const double*,
+@@ -3235,6 +3251,7 @@ void gebp_kernel<std::complex<double>, double, Index, DataMapper, mr, nr, Conjug
+ template<typename Index, typename DataMapper, int mr, int nr, bool ConjugateLhs, bool ConjugateRhs>
+ struct gebp_kernel<double, std::complex<double>, Index, DataMapper, mr, nr, ConjugateLhs, ConjugateRhs>
+ {
++	std::cout << "gebp_kernel15 " << std::endl;
+   typedef quad_traits<double>::vectortype   Packet;
+   typedef Packet1cd  Packetc;
+   typedef quad_traits<double>::rhstype   RhsPacket;
+@@ -3250,6 +3267,7 @@ void gebp_kernel<double, std::complex<double>, Index, DataMapper, mr, nr, Conjug
+                Index rows, Index depth, Index cols, std::complex<double> alpha,
+                Index strideA, Index strideB, Index offsetA, Index offsetB)
+   {
++	  std::cout << "gebp_kernel16 " << std::endl;
+     const Index accRows = quad_traits<double>::rows;
+     const Index accCols = quad_traits<double>::size;
+     void (*gemm_function)(const DataMapper&, const double*, const std::complex<double>*,
+@@ -3277,6 +3295,7 @@ struct gebp_kernel<bfloat16, bfloat16, Index, DataMapper, mr, nr, ConjugateLhs,
+   typedef typename quad_traits<bfloat16>::vectortype   Packet;
+   typedef typename quad_traits<bfloat16>::rhstype      RhsPacket;
+ 
++  std::cout << "gebp_kernel17 " << std::endl;
+   void operator()(const DataMapper& res, const bfloat16* blockA, const bfloat16* blockB,
+                   Index rows, Index depth, Index cols, bfloat16 alpha,
+                   Index strideA=-1, Index strideB=-1, Index offsetA=0, Index offsetB=0);
+@@ -3291,6 +3310,7 @@ void gebp_kernel<bfloat16, bfloat16, Index, DataMapper, mr, nr, ConjugateLhs, Co
+     const Index accRows = quad_traits<bfloat16>::rows;
+     const Index accCols = quad_traits<bfloat16>::size;
+ 
++    std::cout << "gebp_kernel18 " << std::endl;
+     Eigen::internal::gemmMMAbfloat16<Index, Packet, RhsPacket, DataMapper, accRows, accCols>(res, blockA, blockB, rows, depth, cols, alpha, strideA, strideB, offsetA, offsetB);
+   }
+ #endif
+diff --git a/Eigen/src/Core/products/GeneralBlockPanelKernel.h b/Eigen/src/Core/products/GeneralBlockPanelKernel.h
+index 862efc6..b1a6a71 100644
+--- a/Eigen/src/Core/products/GeneralBlockPanelKernel.h
++++ b/Eigen/src/Core/products/GeneralBlockPanelKernel.h
+@@ -12,6 +12,7 @@
+ 
+ 
+ #include "../InternalHeaderCheck.h"
++#include <iostream>
+ 
+ namespace Eigen {
+ 
+@@ -65,9 +66,9 @@ const std::ptrdiff_t defaultL2CacheSize = EIGEN_SET_DEFAULT_L2_CACHE_SIZE(512*10
+ const std::ptrdiff_t defaultL3CacheSize = EIGEN_SET_DEFAULT_L3_CACHE_SIZE(4*1024*1024);
+ #endif
+ #else
+-const std::ptrdiff_t defaultL1CacheSize = EIGEN_SET_DEFAULT_L1_CACHE_SIZE(16*1024);
++const std::ptrdiff_t defaultL1CacheSize = EIGEN_SET_DEFAULT_L1_CACHE_SIZE(64*1024);
+ const std::ptrdiff_t defaultL2CacheSize = EIGEN_SET_DEFAULT_L2_CACHE_SIZE(512*1024);
+-const std::ptrdiff_t defaultL3CacheSize = EIGEN_SET_DEFAULT_L3_CACHE_SIZE(512*1024);
++const std::ptrdiff_t defaultL3CacheSize = EIGEN_SET_DEFAULT_L3_CACHE_SIZE(4*1024*1024);
+ #endif
+ 
+ #undef EIGEN_SET_DEFAULT_L1_CACHE_SIZE
+@@ -1544,6 +1545,7 @@ void gebp_kernel<LhsScalar,RhsScalar,Index,DataMapper,mr,nr,ConjugateLhs,Conjuga
+                Index rows, Index depth, Index cols, ResScalar alpha,
+                Index strideA, Index strideB, Index offsetA, Index offsetB)
+   {
++    std::cout << "gebp_kernel entry" << std::endl;
+     Traits traits;
+     SwappedTraits straits;
+     
+@@ -1637,6 +1639,7 @@ void gebp_kernel<LhsScalar,RhsScalar,Index,DataMapper,mr,nr,ConjugateLhs,Conjuga
+             #define EIGEN_GEBP_3Px8_REGISTER_ALLOC_WORKAROUND
+             #endif
+ 
++	      std::cout <<"gebp micro kernel begin" << std::endl;
+ #define EIGEN_GEBP_ONESTEP(K)                                                         \
+             do {                                                                      \
+                 EIGEN_ASM_COMMENT("begin step of gebp micro kernel 3pX8");            \
+diff --git a/Eigen/src/Core/products/GeneralMatrixMatrixTriangular.h b/Eigen/src/Core/products/GeneralMatrixMatrixTriangular.h
+index 716f2ca..73392ce 100644
+--- a/Eigen/src/Core/products/GeneralMatrixMatrixTriangular.h
++++ b/Eigen/src/Core/products/GeneralMatrixMatrixTriangular.h
+@@ -11,6 +11,7 @@
+ #define EIGEN_GENERAL_MATRIX_MATRIX_TRIANGULAR_H
+ 
+ #include "../InternalHeaderCheck.h"
++#include <iostream>
+ 
+ namespace Eigen { 
+ 
+@@ -163,6 +164,7 @@ struct tribb_kernel
+       Index actualBlockSize = std::min<Index>(BlockSize,size - j);
+       const RhsScalar* actual_b = blockB+j*depth;
+ 
++      std::cout <<"calling gebp_kernel_10" << std::endl;
+       if(UpLo==Upper)
+         gebp_kernel1(res.getSubMapper(0, j), blockA, actual_b, j, depth, actualBlockSize, alpha,
+                      -1, -1, 0, 0);
+@@ -171,6 +173,7 @@ struct tribb_kernel
+       {
+         Index i = j;
+         buffer.setZero();
++	 std::cout <<"calling gebp_kernel_11" << std::endl;
+         // 1 - apply the kernel on the temporary buffer
+         gebp_kernel2(BufferMapper(buffer.data(), BlockSize), blockA+depth*i, actual_b, actualBlockSize, depth, actualBlockSize, alpha,
+                      -1, -1, 0, 0);
+@@ -187,6 +190,7 @@ struct tribb_kernel
+ 
+       if(UpLo==Lower)
+       {
++	       std::cout <<"calling gebp_kernel_12" << std::endl;
+         Index i = j+actualBlockSize;
+         gebp_kernel1(res.getSubMapper(i, j), blockA+depth*i, actual_b, size-i, 
+                      depth, actualBlockSize, alpha, -1, -1, 0, 0);
+diff --git a/Eigen/src/Core/products/GeneralMatrixVector.h b/Eigen/src/Core/products/GeneralMatrixVector.h
+index 7307994..88ed1b4 100644
+--- a/Eigen/src/Core/products/GeneralMatrixVector.h
++++ b/Eigen/src/Core/products/GeneralMatrixVector.h
+@@ -11,6 +11,7 @@
+ #define EIGEN_GENERAL_MATRIX_VECTOR_H
+ 
+ #include "../InternalHeaderCheck.h"
++#include <iostream>
+ 
+ namespace Eigen {
+ 
+@@ -114,6 +115,7 @@ EIGEN_DEVICE_FUNC EIGEN_DONT_INLINE void general_matrix_vector_product<Index,Lhs
+         ResScalar* res, Index resIncr,
+   RhsScalar alpha)
+ {
++	std::cout <<"general_matrix_vector_product run from GeneralMatixProduct.h" << std::endl;
+   EIGEN_UNUSED_VARIABLE(resIncr);
+   eigen_internal_assert(resIncr==1);
+ 
+@@ -121,6 +123,10 @@ EIGEN_DEVICE_FUNC EIGEN_DONT_INLINE void general_matrix_vector_product<Index,Lhs
+   // This helps GCC to generate propoer code.
+   LhsMapper lhs(alhs);
+ 
++  std::cout <<"rows: " << rows << "cols: " << cols << std::endl;
++
++  return;
++
+   conj_helper<LhsScalar,RhsScalar,ConjugateLhs,ConjugateRhs> cj;
+   conj_helper<LhsPacket,RhsPacket,ConjugateLhs,ConjugateRhs> pcj;
+   conj_helper<LhsPacketHalf,RhsPacketHalf,ConjugateLhs,ConjugateRhs> pcj_half;
+@@ -333,6 +339,8 @@ EIGEN_DEVICE_FUNC EIGEN_DONT_INLINE void general_matrix_vector_product<Index,Lhs
+   ResScalar* res, Index resIncr,
+   ResScalar alpha)
+ {
++	std::cout <<"general_matrix_vector_product run2" << std::endl;
++
+   // The following copy tells the compiler that lhs's attributes are not modified outside this function
+   // This helps GCC to generate propoer code.
+   LhsMapper lhs(alhs);
+diff --git a/Eigen/src/Core/products/GeneralMatrixVector_BLAS.h b/Eigen/src/Core/products/GeneralMatrixVector_BLAS.h
+index f77e2e4..f49a2ca 100644
+--- a/Eigen/src/Core/products/GeneralMatrixVector_BLAS.h
++++ b/Eigen/src/Core/products/GeneralMatrixVector_BLAS.h
+@@ -34,6 +34,7 @@
+ #define EIGEN_GENERAL_MATRIX_VECTOR_BLAS_H
+ 
+ #include "../InternalHeaderCheck.h"
++#include <iostream>
+ 
+ namespace Eigen { 
+ 
+@@ -60,6 +61,7 @@ static void run( \
+   const const_blas_data_mapper<Scalar,Index,RowMajor> &rhs, \
+   Scalar* res, Index resIncr, Scalar alpha) \
+ { \
++	std::cout <<"general_matrix_vector_product impl1" << std::end; \
+   if (ConjugateLhs) { \
+     general_matrix_vector_product<Index,Scalar,const_blas_data_mapper<Scalar,Index,ColMajor>,ColMajor,ConjugateLhs,Scalar,const_blas_data_mapper<Scalar,Index,RowMajor>,ConjugateRhs,BuiltIn>::run( \
+       rows, cols, lhs, rhs, res, resIncr, alpha); \
+@@ -77,6 +79,7 @@ static void run( \
+   const const_blas_data_mapper<Scalar,Index,ColMajor> &rhs, \
+   Scalar* res, Index resIncr, Scalar alpha) \
+ { \
++	std::cout <<"general_matrix_vector_product impl2" << std::end; \
+     general_matrix_vector_product_gemv<Index,Scalar,RowMajor,ConjugateLhs,Scalar,ConjugateRhs>::run( \
+       rows, cols, lhs.data(), lhs.stride(), rhs.data(), rhs.stride(), res, resIncr, alpha); \
+ } \
+@@ -99,6 +102,7 @@ static void run( \
+   const EIGTYPE* rhs, Index rhsIncr, \
+   EIGTYPE* res, Index resIncr, EIGTYPE alpha) \
+ { \
++	std::cout <<"general_matrix_vector_product impl3" << std::end; \
+   BlasIndex m=convert_index<BlasIndex>(rows), n=convert_index<BlasIndex>(cols), \
+             lda=convert_index<BlasIndex>(lhsStride), incx=convert_index<BlasIndex>(rhsIncr), incy=convert_index<BlasIndex>(resIncr); \
+   const EIGTYPE beta(1); \
+diff --git a/Eigen/src/Core/products/SelfadjointMatrixMatrix.h b/Eigen/src/Core/products/SelfadjointMatrixMatrix.h
+index c7bb445..ea33b49 100644
+--- a/Eigen/src/Core/products/SelfadjointMatrixMatrix.h
++++ b/Eigen/src/Core/products/SelfadjointMatrixMatrix.h
+@@ -11,6 +11,7 @@
+ #define EIGEN_SELFADJOINT_MATRIX_MATRIX_H
+ 
+ #include "../InternalHeaderCheck.h"
++#include <iostream>
+ 
+ namespace Eigen { 
+ 
+@@ -394,7 +395,7 @@ EIGEN_DONT_INLINE void product_selfadjoint_matrix<Scalar,Index,LhsStorageOrder,t
+         const Index actual_mc = (std::min)(i2+mc,k2)-i2;
+         // transposed packed copy
+         pack_lhs_transposed(blockA, lhs_transpose.getSubMapper(i2, k2), actual_kc, actual_mc);
+-
++	std::cout <<"gebp_kernel_20" << std::endl;
+         gebp_kernel(res.getSubMapper(i2, 0), blockA, blockB, actual_mc, actual_kc, cols, alpha);
+       }
+       // the block diagonal
+@@ -402,7 +403,7 @@ EIGEN_DONT_INLINE void product_selfadjoint_matrix<Scalar,Index,LhsStorageOrder,t
+         const Index actual_mc = (std::min)(k2+kc,size)-k2;
+         // symmetric packed copy
+         pack_lhs(blockA, &lhs(k2,k2), lhsStride, actual_kc, actual_mc);
+-
++ std::cout <<"gebp_kernel_21" << std::endl;
+         gebp_kernel(res.getSubMapper(k2, 0), blockA, blockB, actual_mc, actual_kc, cols, alpha);
+       }
+ 
+@@ -411,7 +412,7 @@ EIGEN_DONT_INLINE void product_selfadjoint_matrix<Scalar,Index,LhsStorageOrder,t
+         const Index actual_mc = (std::min)(i2+mc,size)-i2;
+         gemm_pack_lhs<Scalar, Index, LhsMapper, Traits::mr, Traits::LhsProgress, typename Traits::LhsPacket4Packing, LhsStorageOrder,false>()
+           (blockA, lhs.getSubMapper(i2, k2), actual_kc, actual_mc);
+-
++ std::cout <<"gebp_kernel_22" << std::endl;
+         gebp_kernel(res.getSubMapper(i2, 0), blockA, blockB, actual_mc, actual_kc, cols, alpha);
+       }
+     }
+@@ -475,7 +476,7 @@ EIGEN_DONT_INLINE void product_selfadjoint_matrix<Scalar,Index,LhsStorageOrder,f
+       {
+         const Index actual_mc = (std::min)(i2+mc,rows)-i2;
+         pack_lhs(blockA, lhs.getSubMapper(i2, k2), actual_kc, actual_mc);
+-
++ std::cout <<"gebp_kernel_23" << std::endl;
+         gebp_kernel(res.getSubMapper(i2, 0), blockA, blockB, actual_mc, actual_kc, cols, alpha);
+       }
+     }
+diff --git a/Eigen/src/Core/products/TriangularMatrixMatrix.h b/Eigen/src/Core/products/TriangularMatrixMatrix.h
+index 770107a..58808e3 100644
+--- a/Eigen/src/Core/products/TriangularMatrixMatrix.h
++++ b/Eigen/src/Core/products/TriangularMatrixMatrix.h
+@@ -11,6 +11,7 @@
+ #define EIGEN_TRIANGULAR_MATRIX_MATRIX_H
+ 
+ #include "../InternalHeaderCheck.h"
++#include <iostream>
+ 
+ namespace Eigen { 
+ 
+@@ -204,7 +205,8 @@ EIGEN_DONT_INLINE void product_triangular_matrix_matrix<Scalar,Index,Mode,true,
+           }
+           pack_lhs(blockA, LhsMapper(triangularBuffer.data(), triangularBuffer.outerStride()), actualPanelWidth, actualPanelWidth);
+ 
+-          gebp_kernel(res.getSubMapper(startBlock, 0), blockA, blockB,
++          std::cout <<"calling gebp_kernel3" << std::endl;
++	  gebp_kernel(res.getSubMapper(startBlock, 0), blockA, blockB,
+                       actualPanelWidth, actualPanelWidth, cols, alpha,
+                       actualPanelWidth, actual_kc, 0, blockBOffset);
+ 
+@@ -215,6 +217,7 @@ EIGEN_DONT_INLINE void product_triangular_matrix_matrix<Scalar,Index,Mode,true,
+ 
+             pack_lhs(blockA, lhs.getSubMapper(startTarget,startBlock), actualPanelWidth, lengthTarget);
+ 
++	    std::cout <<"calling gebp_kernel4" << std::endl;
+             gebp_kernel(res.getSubMapper(startTarget, 0), blockA, blockB,
+                         lengthTarget, actualPanelWidth, cols, alpha,
+                         actualPanelWidth, actual_kc, 0, blockBOffset);
+@@ -231,7 +234,8 @@ EIGEN_DONT_INLINE void product_triangular_matrix_matrix<Scalar,Index,Mode,true,
+           gemm_pack_lhs<Scalar, Index, LhsMapper, Traits::mr,Traits::LhsProgress, typename Traits::LhsPacket4Packing, LhsStorageOrder,false>()
+             (blockA, lhs.getSubMapper(i2, actual_k2), actual_kc, actual_mc);
+ 
+-          gebp_kernel(res.getSubMapper(i2, 0), blockA, blockB, actual_mc,
++          std::cout <<"calling gebp_kernel5" << std::endl;
++	  gebp_kernel(res.getSubMapper(i2, 0), blockA, blockB, actual_mc,
+                       actual_kc, cols, alpha, -1, -1, 0, 0);
+         }
+       }
+@@ -380,6 +384,8 @@ EIGEN_DONT_INLINE void product_triangular_matrix_matrix<Scalar,Index,Mode,false,
+             Index panelLength = IsLower ? actual_kc-j2 : j2+actualPanelWidth;
+             Index blockOffset = IsLower ? j2 : 0;
+ 
++	    std::cout <<"calling gebp_kernel1" << std::endl;
++
+             gebp_kernel(res.getSubMapper(i2, actual_k2 + j2),
+                         blockA, blockB+j2*actual_kc,
+                         actual_mc, panelLength, actualPanelWidth,
+@@ -388,6 +394,7 @@ EIGEN_DONT_INLINE void product_triangular_matrix_matrix<Scalar,Index,Mode,false,
+                         blockOffset, blockOffset);// offsets
+           }
+         }
++	std::cout <<"calling gebp_kernel2" << std::endl;
+         gebp_kernel(res.getSubMapper(i2, IsLower ? 0 : k2),
+                     blockA, geb, actual_mc, actual_kc, rs,
+                     alpha,
+diff --git a/Eigen/src/Core/util/BlasUtil.h b/Eigen/src/Core/util/BlasUtil.h
+index 979d974..34bb3f9 100644
+--- a/Eigen/src/Core/util/BlasUtil.h
++++ b/Eigen/src/Core/util/BlasUtil.h
+@@ -14,6 +14,7 @@
+ // implement and control fast level 2 and level 3 BLAS-like routines.
+ 
+ #include "../InternalHeaderCheck.h"
++#include <iostream>
+ 
+ namespace Eigen {
+ 
+@@ -187,12 +188,14 @@ public:
+   EIGEN_DEVICE_FUNC EIGEN_ALWAYS_INLINE blas_data_mapper(Scalar* data, Index stride, Index incr=1)
+    : m_data(data), m_stride(stride)
+   {
++	  std::cout << "blas_data_mapper1" << std::endl;
+     EIGEN_ONLY_USED_FOR_DEBUG(incr);
+     eigen_assert(incr==1);
+   }
+ 
+   EIGEN_DEVICE_FUNC  EIGEN_ALWAYS_INLINE blas_data_mapper<Scalar, Index, StorageOrder, AlignmentType>
+   getSubMapper(Index i, Index j) const {
++	  std::cout << "blas_data_mapper2" << std::endl;
+     return blas_data_mapper<Scalar, Index, StorageOrder, AlignmentType>(&operator()(i, j), m_stride);
+   }
+ 
+@@ -448,9 +451,10 @@ protected:
+ template<typename Scalar, typename Index, int StorageOrder>
+ class const_blas_data_mapper : public blas_data_mapper<const Scalar, Index, StorageOrder> {
+   public:
+-  EIGEN_ALWAYS_INLINE const_blas_data_mapper(const Scalar *data, Index stride) : blas_data_mapper<const Scalar, Index, StorageOrder>(data, stride) {}
++  EIGEN_ALWAYS_INLINE const_blas_data_mapper(const Scalar *data, Index stride) : blas_data_mapper<const Scalar, Index, StorageOrder>(data, stride) {std::cout << "const_blas_data_mapper1" << std::endl;}
+ 
+   EIGEN_ALWAYS_INLINE const_blas_data_mapper<Scalar, Index, StorageOrder> getSubMapper(Index i, Index j) const {
++	  std::cout << "const_blas_data_mapper2" << std::endl;
+     return const_blas_data_mapper<Scalar, Index, StorageOrder>(&(this->operator()(i, j)), this->m_stride);
+   }
+ };
+diff --git a/blas/PackedTriangularMatrixVector.h b/blas/PackedTriangularMatrixVector.h
+index cc2a9b8..d6cce4a 100644
+--- a/blas/PackedTriangularMatrixVector.h
++++ b/blas/PackedTriangularMatrixVector.h
+@@ -10,6 +10,8 @@
+ #ifndef EIGEN_PACKED_TRIANGULAR_MATRIX_VECTOR_H
+ #define EIGEN_PACKED_TRIANGULAR_MATRIX_VECTOR_H
+ 
++#include <iostream>
++
+ namespace internal {
+ 
+ template<typename Index, int Mode, typename LhsScalar, bool ConjLhs, typename RhsScalar, bool ConjRhs, int StorageOrder>
+@@ -26,7 +28,8 @@ struct packed_triangular_matrix_vector_product<Index,Mode,LhsScalar,ConjLhs,RhsS
+   };
+   static void run(Index size, const LhsScalar* lhs, const RhsScalar* rhs, ResScalar* res, ResScalar alpha)
+   {
+-    internal::conj_if<ConjRhs> cj;
++std::cout << "blas_triangule martic vector" << std::endl;
++      	  internal::conj_if<ConjRhs> cj;
+     typedef Map<const Matrix<LhsScalar,Dynamic,1> > LhsMap;
+     typedef typename conj_expr_if<ConjLhs,LhsMap>::type ConjLhsType;
+     typedef Map<Matrix<ResScalar,Dynamic,1> > ResMap;
+diff --git a/blas/level2_impl.h b/blas/level2_impl.h
+index 173f40b..37bd0b6 100644
+--- a/blas/level2_impl.h
++++ b/blas/level2_impl.h
+@@ -9,12 +9,17 @@
+ 
+ #include "common.h"
+ 
++#include <iostream>
++
+ template<typename Index, typename Scalar, int StorageOrder, bool ConjugateLhs, bool ConjugateRhs>
+ struct general_matrix_vector_product_wrapper
+ {
+   static void run(Index rows, Index cols,const Scalar *lhs, Index lhsStride, const Scalar *rhs, Index rhsIncr, Scalar* res, Index resIncr, Scalar alpha)
+   {
+-    typedef internal::const_blas_data_mapper<Scalar,Index,StorageOrder> LhsMapper;
++
++	  std::cout << "general_matrix_vector_product from blas_v2_impl.h " << std::endl;
++
++	  typedef internal::const_blas_data_mapper<Scalar,Index,StorageOrder> LhsMapper;
+     typedef internal::const_blas_data_mapper<Scalar,Index,RowMajor> RhsMapper;
+     
+     internal::general_matrix_vector_product
+@@ -26,6 +31,7 @@ struct general_matrix_vector_product_wrapper
+ int EIGEN_BLAS_FUNC(gemv)(const char *opa, const int *m, const int *n, const RealScalar *palpha,
+                           const RealScalar *pa, const int *lda, const RealScalar *pb, const int *incb, const RealScalar *pbeta, RealScalar *pc, const int *incc)
+ {
++	std::cout << "general_matrix_vector_product from blas_v2_impl.h1 " << std::endl;
+   typedef void (*functype)(int, int, const Scalar *, int, const Scalar *, int , Scalar *, int, Scalar);
+   static const functype func[4] = {
+     // array index: NOTR
+diff --git a/blas/level3_impl.h b/blas/level3_impl.h
+index 66216c9..4ad10bd 100644
+--- a/blas/level3_impl.h
++++ b/blas/level3_impl.h
+@@ -13,7 +13,9 @@ int EIGEN_BLAS_FUNC(gemm)(const char *opa, const char *opb, const int *m, const
+                           const RealScalar *pa, const int *lda, const RealScalar *pb, const int *ldb, const RealScalar *pbeta, RealScalar *pc, const int *ldc)
+ {
+ //   std::cerr << "in gemm " << *opa << " " << *opb << " " << *m << " " << *n << " " << *k << " " << *lda << " " << *ldb << " " << *ldc << " " << *palpha << " " << *pbeta << "\n";
+-  typedef void (*functype)(DenseIndex, DenseIndex, DenseIndex, const Scalar *, DenseIndex, const Scalar *, DenseIndex, Scalar *, DenseIndex, DenseIndex, Scalar, internal::level3_blocking<Scalar,Scalar>&, Eigen::internal::GemmParallelInfo<DenseIndex>*);
++std::cout << "blas_lvl3_impl_gemm" << std::endl;
++
++      	typedef void (*functype)(DenseIndex, DenseIndex, DenseIndex, const Scalar *, DenseIndex, const Scalar *, DenseIndex, Scalar *, DenseIndex, DenseIndex, Scalar, internal::level3_blocking<Scalar,Scalar>&, Eigen::internal::GemmParallelInfo<DenseIndex>*);
+   static const functype func[12] = {
+     // array index: NOTR  | (NOTR << 2)
+     (internal::general_matrix_matrix_product<DenseIndex,Scalar,ColMajor,false,Scalar,ColMajor,false,ColMajor,1>::run),
+diff --git a/unsupported/Eigen/CXX11/src/Tensor/TensorBase.h b/unsupported/Eigen/CXX11/src/Tensor/TensorBase.h
+index e3fc8f4..ab7a2cb 100644
+--- a/unsupported/Eigen/CXX11/src/Tensor/TensorBase.h
++++ b/unsupported/Eigen/CXX11/src/Tensor/TensorBase.h
+@@ -12,6 +12,7 @@
+ 
+ // clang-format off
+ 
++#include <iostream>
+ #include "./InternalHeaderCheck.h"
+ 
+ namespace Eigen {
+@@ -616,12 +617,14 @@ class TensorBase<Derived, ReadOnlyAccessors>
+     template<typename OtherDerived, typename Dimensions> EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
+     const TensorContractionOp<const Dimensions, const Derived, const OtherDerived, const NoOpOutputKernel>
+     contract(const OtherDerived& other, const Dimensions& dims) const {
++            std::cout << "TensorBase::contract TB1" << std::endl;
+       return TensorContractionOp<const Dimensions, const Derived, const OtherDerived, const NoOpOutputKernel>(derived(), other.derived(), dims);
+     }
+ 
+     template<typename OtherDerived, typename Dimensions, typename OutputKernel> EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
+     const TensorContractionOp<const Dimensions, const Derived, const OtherDerived, const OutputKernel>
+     contract(const OtherDerived& other, const Dimensions& dims, const OutputKernel& output_kernel) const {
++	          std::cout << "TensorBase::contract TB2" << std::endl;
+       return TensorContractionOp<const Dimensions, const Derived, const OtherDerived, const OutputKernel>(derived(), other.derived(), dims, output_kernel);
+     }
+ 
+diff --git a/unsupported/Eigen/CXX11/src/Tensor/TensorContraction.h b/unsupported/Eigen/CXX11/src/Tensor/TensorContraction.h
+index 3a917a0..8e58c23 100644
+--- a/unsupported/Eigen/CXX11/src/Tensor/TensorContraction.h
++++ b/unsupported/Eigen/CXX11/src/Tensor/TensorContraction.h
+@@ -11,6 +11,7 @@
+ #define EIGEN_CXX11_TENSOR_TENSOR_CONTRACTION_H
+ 
+ #include "./InternalHeaderCheck.h"
++#include <iostream>
+ 
+ namespace Eigen {
+ 
+@@ -733,6 +734,9 @@ struct TensorContractionEvaluatorBase {
+     const Index rows = m_i_size;
+     const Index cols = m_k_size;
+ 
++    std::cout << "evalGemv TC1" << std::endl;
++    std::cout <<"rows: " << rows << "cols: " << cols << std::endl;
++
+     typedef std::remove_const_t<typename EvalLeftArgType::Scalar> LhsScalar;
+     typedef std::remove_const_t<typename EvalRightArgType::Scalar> RhsScalar;
+     typedef TensorEvaluator<EvalLeftArgType, Device> LeftEvaluator;
+@@ -764,6 +768,8 @@ struct TensorContractionEvaluatorBase {
+     // zero out the result buffer (which must be of size at least rows * sizeof(Scalar)
+     m_device.fill(buffer, buffer + rows, Scalar(0));
+ 
++    std::cout <<"callinh general_matrix_vector_product" << std::endl;
++
+     internal::general_matrix_vector_product<Index,LhsScalar,LhsMapper,ColMajor,false,RhsScalar,RhsMapper,false>::run(
+         rows, cols, lhs, rhs,
+         buffer, resIncr, alpha);
+@@ -781,6 +787,7 @@ struct TensorContractionEvaluatorBase {
+   void evalGemm(Scalar* buffer) const {
+     // columns in left side, rows in right side
+     const Index k = this->m_k_size;
++    std::cout <<"evalGemm TV2" << std::endl;
+     this->template evalGemmPartial<lhs_inner_dim_contiguous,
+                                    rhs_inner_dim_contiguous,
+                                    rhs_inner_dim_reordered,
+@@ -803,6 +810,7 @@ struct TensorContractionEvaluatorBase {
+     // columns in slice on left side, rows on right side
+     const Index k_slice = k_end - k_start;
+ 
++    std::cout << " evalGemmPartial" << std::endl;
+     // rows in left side
+     const Index m = this->m_i_size;
+ 
+-- 
+2.34.1
+
